@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Health Assistant</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: linear-gradient(120deg, #3aa0ff, #22e1ff);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-container {
+            width: 380px;
+            height: 550px;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #0d6efd;
+            color: white;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f7f9fc;
+        }
+
+        .user, .bot {
+            max-width: 80%;
+            padding: 10px 14px;
+            margin: 8px 0;
+            border-radius: 14px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .user {
+            background: #0d6efd;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot {
+            background: #e9ecef;
+            color: #000;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .emergency {
+            background: #ffdddd;
+            color: #a10000;
+            border-left: 4px solid red;
+            font-weight: bold;
+        }
+
+        .input-area {
+            padding: 10px;
+            display: flex;
+            gap: 6px;
+            border-top: 1px solid #ddd;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        .input-area button {
+            border: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #0d6efd;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .input-area button:hover {
+            background: #0b5ed7;
+        }
+
+        .report-btn {
+            background: #198754;
+        }
+
+        .report-btn:hover {
+            background: #157347;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+    <div class="header">
+        <h2>AI Health Assistant 🩺</h2>
+        <p>Your smart symptom checker</p>
+    </div>
+
+    <div class="chat-box" id="chat-box"></div>
+
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Describe your symptoms...">
+        <button onclick="sendText()">Send</button>
+        <button onclick="startVoice()">🎤</button>
+        <a href="/download_report">
+            <button class="report-btn">📄</button>
+        </a>
+    </div>
+</div>
+
+<script>
+const chatBox = document.getElementById("chat-box");
+const input = document.getElementById("user-input");
+
+function addMessage(text, sender, isEmergency=false) {
+    const msg = document.createElement("div");
+    msg.className = sender;
+    if (isEmergency) msg.classList.add("emergency");
+    msg.innerText = text;
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+async function sendMessage(messageText) {
+    if (!messageText) return;
+
+    addMessage("You: " + messageText, "user");
+    input.value = "";
+
+    try {
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: messageText })
+        });
+
+        const data = await response.json();
+
+        if (data.emergency) {
+            addMessage("🚨 EMERGENCY: " + data.reply, "bot", true);
+        } else {
+            addMessage("Bot: " + data.reply, "bot");
+        }
+
+        speakText(data.reply);
+
+    } catch (err) {
+        addMessage("Bot: Server error. Please try again.", "bot");
+    }
+}
+
+function sendText() {
+    sendMessage(input.value.trim());
+}
+
+// 🎤 VOICE INPUT
+function startVoice() {
+    if (!('webkitSpeechRecognition' in window)) {
+        alert("Voice input not supported in this browser");
+        return;
+    }
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = "en-IN";
+
+    recognition.onresult = function(event) {
+        const voiceText = event.results[0][0].transcript;
+        input.value = voiceText;
+        sendMessage(voiceText);
+    };
+
+    recognition.start();
+}
+
+// 🔊 BOT VOICE OUTPUT
+function speakText(text) {
+    const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = "en-IN";
+    speech.rate = 1;
+    window.speechSynthesis.speak(speech);
+}
+</script>
+
+</body>
+</html>

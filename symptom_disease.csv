@@ -1,0 +1,11 @@
+fever,cough,headache,fatigue,nausea,body_pain,disease
+1,1,0,1,0,1,Flu
+1,1,1,1,0,1,Flu
+0,0,1,0,1,0,Migraine
+0,0,1,1,1,0,Migraine
+0,0,0,0,1,1,Food Poisoning
+1,0,0,1,1,1,Food Poisoning
+0,1,0,0,0,0,Common Cold
+1,1,0,0,0,0,Common Cold
+1,0,1,1,0,0,Viral Fever
+1,0,0,1,0,1,Viral Fever
